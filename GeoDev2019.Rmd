@@ -1,0 +1,719 @@
+---
+title: 'GeoDev 2019: Intro to Simple Features'
+author: "Benjamin Ortiz Ulloa"
+date: "2/24/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+The material in this workshop is strongly influenced by the following free online materials:
+
+- [https://geocompr.robinlovelace.net/](https://geocompr.robinlovelace.net/)
+- [https://r4ds.had.co.nz/](https://r4ds.had.co.nz/)
+- [https://jennybc.github.io/purrr-tutorial/](https://jennybc.github.io/purrr-tutorial/)
+
+## Introduction to R
+
+### Variable Assignment
+
+```{r}
+#assign function
+assign('w', 0)
+w
+```
+
+```{r}
+#left arrow
+x <- 1
+x
+```
+
+```{r}
+#equal
+y = 2
+y
+```
+
+```{r}
+#right arrow
+3 -> z
+z
+```
+
+```{r}
+w + x + y + z
+```
+
+### Data Structures
+
+#### Atomic Vectors
+
+Vectors are single dimension data collections of the same type. 
+
+```{r}
+#use `c` function to combine individual datum together in a vector
+#character
+char_vector <-  c('a', 'b', 'c', 'd')
+char_vector
+```
+
+```{r}
+#for numbers, you can get a vector range by using `:`
+#integer
+int_vector <- 1:10
+int_vector
+```
+
+```{r}
+#combining int and char vectors returns a character
+combo_int_char <- c(char_vector, int_vector)
+typeof(combo_int_char)
+combo_int_char
+```
+
+```{r}
+#double
+dbl_vector <- seq(1, 2, by=.2)
+dbl_vector
+```
+
+```{r}
+#logical/boolean
+logical_vector <- c(FALSE, TRUE, F, T)
+logical_vector
+```
+
+Items can be extracted from vector using square bracket `[index]` notation. R is a **1 index** language and the first item in most data structures is in position 1.
+
+```{r}
+#first element of char_vector
+char_vector[1]
+
+#last element of int_vector (calculate the size of vector with `length()`)
+int_vector[length(int_vector)]
+```
+
+#### Matrices & Arrays
+
+Matrices are two dimensional data collections of the same type.
+
+```{r}
+matrix(1:10)
+```
+
+```{r}
+matrix(1:10, ncol = 2)
+```
+
+```{r}
+myMatrix <- matrix(1:10, ncol = 2, byrow = T)
+myMatrix
+```
+
+```{r}
+matrix(sample(0:1, size = 100, replace = T), ncol = 10, nrow = 10)
+```
+
+Items can be retrieved from a matrix by using the square bracket `[row, column]` notation
+
+```{r}
+#first row
+myMatrix[1,]
+
+#first column
+myMatrix[,1]
+
+#first row first column
+myMatrix[1,1]
+```
+
+#### Lists
+
+Lists are the R objects which contain elements of different types like − numbers, strings, vectors and another list inside it. A list can also contain a matrix or a function as its elements.
+
+```{r}
+myList <- list(
+  char_vector,
+  int_vector,
+  dbl_vector,
+  logical_vector,
+  myMatrix
+)
+
+myList
+```
+
+Items can be retrieved from a list by using double bracket notation `[[index]]`.
+
+```{r}
+myList[[1]]
+```
+
+The indexes in a list can also be named. If they are named, then you can use dollar sign notation `$name` to retrieve an item from the list.
+
+```{r}
+myNamedList <- list(
+  "char" = char_vector,
+  "int" = int_vector,
+  "dbl" = dbl_vector,
+  "lgl" = logical_vector,
+  "mat" = myMatrix,
+  "list" = myList
+)
+
+myNamedList$char
+```
+
+#### Data Frames
+
+A data frame is used for storing data tables. It is a list of vectors of equal length. It should resemble a typical table structure similar to an Excel worksheet.
+
+```{r}
+myDF <- data.frame(
+  char = c('a', 'b', 'c', 'd', 'e', 'f'),
+  num = 1:6,
+  lgl = rep(c(T, F), 3)
+)
+
+myDF
+```
+
+```{r}
+myDF[1:3,'num']
+myDF$num[1:3]
+
+myDF[1:3, c('num', 'lgl')]
+```
+
+### Functions
+
+### Tidyverse
+
+To explore functions from the tidyverse we will create two dataframes. 
+
+```{r}
+state_df <- data.frame(
+  NAME = state.name,
+  ABB = state.abb,
+  AREA = state.area
+)
+
+head(state_df)
+
+state_regions <- data.frame(
+  NAME = c(state.name, 'District of Columbia'),
+  REGION = c(as.character(state.region), 'South')
+)
+
+head(state_regions)
+```
+
+#### magrittr::`%>%`
+
+Of the **Tidyverse** packages, the only one we will explicitly load into our environment is *magrittr*
+
+```{r}
+library(magrittr)
+```
+
+#### dplyr::filter
+
+```{r}
+state_regions %>%
+  dplyr::filter(REGION == 'Northeast')
+
+state_df %>%
+  dplyr::filter(AREA >= 150000)
+
+state_df %>%
+  dplyr::filter(ABB %in% c("PA", "OH", "MD"))
+```
+
+#### stringr::str_detect
+
+```{r}
+stringr::str_detect(string = 'New York', pattern = 'New')
+```
+
+```{r}
+state_df %>%
+  dplyr::filter(stringr::str_detect(NAME, 'New'))
+```
+
+#### dplyr::x_join
+
+```{r, message = F}
+state_df %>%
+  dplyr::left_join(state_regions, by = 'NAME') %>%
+  tail()
+```
+
+```{r, message = F}
+state_df %>%
+  dplyr::full_join(state_regions, by = 'NAME') %>%
+  tail()
+```
+
+```{r, message = F}
+state_regions %>%
+  dplyr::anti_join(state_df, by = 'NAME')
+```
+
+#### purrr::map_x
+
+iterates through the rows of a table.
+
+```{r}
+state_df$AREA %>%
+  head() %>%
+  purrr::map(sqrt)
+
+state_df$AREA %>%
+  head() %>%
+  purrr::map_dbl(sqrt)
+
+state_df %>%
+  head() %>%
+  {
+    purrr::map2_chr(.$NAME, .$ABB, function(x, y){
+      paste(x, 'is', y)
+    })
+  }
+
+state_df %>%
+  head() %>%
+  {
+    purrr::pmap_chr(., function(NAME, ABB, AREA){
+      paste(NAME, 'or', ABB, 'has an area of', AREA )
+    })
+  }
+```
+
+#### dplyr::group_by & tidyr::nest
+
+```{r}
+nested_regions <- state_regions %>%
+  dplyr::group_by(REGION) %>%
+  tidyr::nest()
+
+nested_regions
+```
+
+```{r}
+new_regions <- nested_regions %>%
+  dplyr::mutate(n_new_in_region = purrr::map_dbl(data, function(d){
+    d %>%
+      dplyr::filter(stringr::str_detect(NAME, 'New')) %>%
+      nrow()
+  }))
+
+new_regions
+```
+
+```{r}
+new_regions %>%
+  tidyr::unnest() %>%
+  dplyr::arrange(desc(n_new_in_region))
+```
+
+#### stringr::str_replace
+
+```{r}
+stringr::str_replace(string = 'Philadelphia Metro Area', pattern = ' Metro Area', replacement = '')
+```
+
+## Simple Features
+
+### Introduction
+
+```{r, message=F}
+library(sf)
+library(spData)
+```
+
+### Spatial Types
+
+![](img/sf-classes.png)
+
+```{r}
+point_mat <- matrix(c(1, 3, 5, 1, 4, 1), ncol = 2)
+point_mat
+```
+
+```{r}
+multipoint = st_multipoint(point_mat)
+multipoint
+plot(multipoint, cex = 2.5)
+```
+
+```{r}
+linestring = st_cast(multipoint, "LINESTRING")
+linestring
+plot(linestring)
+```
+
+```{r}
+polyg = st_cast(multipoint, "POLYGON")
+polyg
+plot(polyg, col = 'lightgrey', border = 'purple', lwd = 4)
+```
+
+```{r}
+st_cast(polyg, 'MULTIPOINT')
+```
+
+```{r}
+hole_points <- list(
+  matrix(c(1,1, 3,4, 5,1, 1,1), ncol = 2, byrow = T),
+  matrix(c(2,2, 3,3, 4,2, 2,2), ncol = 2, byrow = T),
+  matrix(c(2.25,2.25, 3,2.75, 3.75,2.25, 2.25,2.25), ncol=2, byrow = T),
+  matrix(c(1,3, 1,4, 2,3.5, 1,3), ncol = 2, byrow =T),
+  matrix(c(3,3, 5,4, 5,2, 3,3), ncol = 2, byrow =T)
+)
+
+holy_polygon <- st_polygon(hole_points)
+holy_polygon
+
+plot(holy_polygon, col = 'lightgrey')
+```
+
+```{r}
+multi_poly <- st_cast(holy_polygon, 'MULTIPOLYGON')
+plot(multi_poly, col = 'lightgrey')
+```
+
+### Spatial Predicates
+
+```{r}
+# create a polygon
+a_poly = st_polygon(list(rbind(c(-1, -1), c(1, -1), c(1, 1), c(-1, -1))))
+a = st_sfc(a_poly)
+
+# create a line
+l_line = st_linestring(x = matrix(c(-1, 1, 1, -1), ncol = 2))
+l = st_sfc(l_line)
+
+# create points
+p_matrix = matrix(c(0.5, 1, -1, 0, 0, 1, 1, 1), ncol = 2)
+p_multi = st_multipoint(x = p_matrix)
+p = st_sf(st_cast(st_sfc(p_multi), "POINT"))
+
+plot(a)
+plot(p, add = T, pch = 19)
+plot(l, add = T)
+```
+
+#### sf::st_within
+
+```{r}
+p_within <- p %>%
+  dplyr::filter(st_within(., a, sparse = F))
+
+plot(a)
+plot(p_within, add = T, pch = 19)
+```
+
+#### sf::st_touches
+
+```{r}
+p_touches <- p %>%
+  dplyr::filter(st_touches(., a, sparse = F))
+
+plot(a)
+plot(p_touches, add = T, pch = 19)
+```
+
+
+#### sf::st_intersects
+
+```{r}
+p_intersects <- p %>%
+  dplyr::filter(st_intersects(., a, sparse = F))
+
+plot(a)
+plot(p_intersects, add = T, pch = 19)
+```
+
+#### sf::st_disjoint
+
+```{r}
+p_disjoint <- p %>%
+  dplyr::filter(st_disjoint(., a, sparse = F))
+
+plot(a)
+plot(p_disjoint, add = T, pch = 19)
+```
+
+#### sf::st_is_within_distances
+
+
+```{r}
+p_withindist <- p %>%
+  dplyr::filter(st_is_within_distance(., a, dist = 1, sparse = F))
+
+plot(a)
+plot(p_withindist, add = T, pch = 19)
+```
+
+```{r}
+p_close_but_not_inside <- p %>%
+  dplyr::filter(st_is_within_distance(., a, dist = 1, sparse = F),
+                st_disjoint(., a, sparse = F))  
+
+plot(a)
+plot(p_close_but_not_inside, add = T, pch = 19)
+```
+
+#### sf::st_union
+
+```{r}
+line_poly <- st_union(l, a)
+
+p_touches <- p %>%
+  dplyr::filter(st_touches(., line_poly, sparse = F))
+
+line_poly %>%
+  st_cast %>%
+  plot()
+plot(p_touches, add = T)
+
+```
+
+### I/O & Data Cleaning
+
+```{r}
+us_states <- st_read('data/cb_2017_us_state_500k/cb_2017_us_state_500k.shp')
+```
+
+```{r}
+head(us_states)
+```
+
+```{r}
+plot(us_states$geometry) 
+```
+
+```{r}
+conus <- us_states %>%
+  dplyr::filter(!NAME %in% c("Alaska",
+                             "American Samoa",
+                             "Commonwealth of the Northern Mariana Islands",
+                             "Hawaii",
+                             "Guam",
+                             "Puerto Rico",
+                             "United States Virgin Islands"
+                             ))
+
+plot(conus$geometry)
+```
+
+```{r}
+conus_outline <- st_union(conus$geometry)
+conus_outline
+```
+
+```{r}
+plot(conus_outline)
+```
+
+```{r}
+amtrak <- st_read('data/amtrak_rails/amtrak_rails.shp')
+amtrak
+```
+
+```{r}
+plot(amtrak$geometry)
+```
+
+```{r}
+plot(conus_outline)
+plot(amtrak$geometry, add = T)
+```
+
+
+```{r}
+state_regions <- data.frame(
+  NAME = c(state.name, "District of Columbia"),
+  REGION = c(as.character(state.region), "South")
+)
+
+head(state_regions)
+```
+
+```{r}
+conus_w_region <- conus %>%
+  dplyr::left_join(state_regions)
+
+head(conus_w_region)
+```
+
+```{r}
+cbsa <- read_sf('data/cb_2017_us_cbsa_500k/cb_2017_us_cbsa_500k.shp')
+head(cbsa)
+```
+
+```{r}
+plot(cbsa$geometry)
+```
+
+```{r}
+conus_cbsa <- cbsa %>%
+  # dplyr::mutate(STUSPS = stringr::str_extract(NAME, '(?<=, )[^,]+$')) %>% 
+  dplyr::filter(st_intersects(., conus_outline, sparse = F))
+```
+
+```{r}
+plot(conus_cbsa$geometry)
+```
+
+```{r}
+amtrak_cbsa <- conus_cbsa %>%
+  dplyr::filter(st_intersects(., amtrak, sparse = T) %>%
+                  purrr::map_lgl(function(x){
+                    !identical(x, integer(0))
+                  }))
+
+```
+
+```{r}
+plot(conus_outline)
+plot(amtrak$geometry, add = T)
+plot(amtrak_cbsa$geometry, add = T)
+```
+
+```{r}
+conus_regions <- conus_w_region %>%
+  dplyr::group_by(REGION) %>%
+  tidyr::nest() %>%
+  {
+    purrr::map2(.$data, .$REGION, function(d, r){
+    d  %>%
+      st_union() %>%  #unions all features in subregion
+      st_sf() %>% #converts to sf (data frame type object)
+      dplyr::mutate(REGION = r) #remember the name of the region
+      }
+  )} %>%
+  do.call(rbind, .)
+
+conus_regions
+```
+
+```{r}
+plot(conus_regions$geometry)
+```
+
+```{r}
+northeast <- conus_regions %>%
+  dplyr::filter(REGION == 'Northeast') 
+
+northeast_amtrak <- amtrak %>%
+  dplyr::filter(st_intersects(., northeast, sparse = F))
+
+northeast_amtrak_cbsa <- amtrak_cbsa %>%
+  dplyr::filter(st_intersects(., northeast, sparse = F))
+```
+
+```{r}
+plot(northeast$geometry)
+plot(northeast_amtrak_cbsa$geometry, col = 'lightgrey', add = T)
+plot(northeast_amtrak$geometry, col = 'red', lwd = 1,  add = T)
+```
+
+```{r}
+census_data <- readr::read_csv('data/PEP_2017.csv')
+census_data
+```
+
+```{r}
+census_data <- census_data %>%
+  dplyr::mutate(NAME = stringr::str_replace(NAME, ' Metro Area$', ''),
+                GEOID = as.character(GEOID)) 
+```
+
+```{r}
+northeast_amtrak_cbsa <- northeast_amtrak_cbsa %>%
+  dplyr::left_join(census_data)
+```
+
+```{r}
+plot(northeast$geometry)
+plot(northeast_amtrak_cbsa['respop72017'], add = T)
+plot(northeast_amtrak$geometry, col = 'red', lwd = 1,  add = T)
+```
+
+```{r}
+amtrak_points <- st_cast(northeast_amtrak, 'POINT')
+amtrak_lines <- st_cast(northeast_amtrak, 'LINESTRING')
+```
+
+```{r}
+plot(amtrak_points$geometry)
+```
+
+```{r}
+amtrak_cbsa_points <- northeast_amtrak_cbsa %>%
+  dplyr::select(NAME, respop72017) %>%
+  st_join(amtrak_points, .)
+
+amtrak_cbsa_points
+```
+
+```{r}
+amtrak_cbsa_points <-  amtrak_cbsa_points %>%
+  dplyr::select(rail = NAME.x,
+                city = NAME.y,
+                pop2017 = respop72017) %>%
+  dplyr::mutate(rail = as.character(rail),
+                city = as.character(city))
+
+```
+
+```{r}
+plot(northeast$geometry, col = 'grey90')
+plot(northeast_amtrak$geometry, col = 'darkslategrey', lwd = 1, add = T)
+plot(amtrak_cbsa_points['pop2017'], cex = .25, add = T)
+```
+
+
+<!-- ```{r} -->
+<!-- empty_points <- amtrak_cbsa_points %>% -->
+<!--   dplyr::filter(is.na(pop2017) | is.na(city)) -->
+
+<!-- amtrak_points_nested <- amtrak_cbsa_points %>% -->
+<!--   dplyr::filter(!is.na(pop2017), -->
+<!--                 !is.na(city)) %>% -->
+<!--   dplyr::group_by(rail, city, pop2017) %>% -->
+<!--   tidyr::nest()  -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- amtrak_lines <- amtrak_points_nested %>% -->
+<!--   dplyr::mutate(data = purrr::map(data, function(d){ -->
+<!--     d %>% -->
+<!--       st_coordinates() %>% -->
+<!--       st_linestring() -->
+<!--   })  -->
+<!--   ) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- amtrak_lines <- purrr::pmap(amtrak_points_nested,  function(rail, city, pop2017, data){ -->
+<!--   data  %>% -->
+<!--     st_coordinates() %>% -->
+<!--     st_linestring() %>% -->
+<!--     st_sfc() %>% -->
+<!--     st_sf() %>% -->
+<!--     dplyr::mutate(rail = rail, city = city, pop2017 = pop2017) -->
+<!--   } -->
+<!--   ) %>% -->
+<!--   do.call(rbind, .) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- amtrak_lines['pop2017'] %>% plot() -->
+<!-- ``` -->
