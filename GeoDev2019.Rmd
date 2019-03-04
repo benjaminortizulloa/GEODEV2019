@@ -660,7 +660,17 @@ amtrak_cbsa_points <- northeast_amtrak_cbsa %>%
   dplyr::select(NAME, respop72017) %>%
   st_join(amtrak_points, .)
 
+amtrak_cbsa_lines <- northeast_amtrak_cbsa %>%
+  dplyr::select(NAME, respop72017) %>%
+  st_join(amtrak_lines, ., largest = T)
+
 amtrak_cbsa_points
+amtrak_cbsa_lines
+```
+
+```{r}
+plot(amtrak_cbsa_lines['respop72017'])
+plot(northeast$geometry, add = T)
 ```
 
 ```{r}
@@ -680,40 +690,16 @@ plot(amtrak_cbsa_points['pop2017'], cex = .25, add = T)
 ```
 
 
-<!-- ```{r} -->
-<!-- empty_points <- amtrak_cbsa_points %>% -->
-<!--   dplyr::filter(is.na(pop2017) | is.na(city)) -->
+### TMAP
 
-<!-- amtrak_points_nested <- amtrak_cbsa_points %>% -->
-<!--   dplyr::filter(!is.na(pop2017), -->
-<!--                 !is.na(city)) %>% -->
-<!--   dplyr::group_by(rail, city, pop2017) %>% -->
-<!--   tidyr::nest()  -->
-<!-- ``` -->
+```{r}
+library(tmap)
+```
 
-<!-- ```{r} -->
-<!-- amtrak_lines <- amtrak_points_nested %>% -->
-<!--   dplyr::mutate(data = purrr::map(data, function(d){ -->
-<!--     d %>% -->
-<!--       st_coordinates() %>% -->
-<!--       st_linestring() -->
-<!--   })  -->
-<!--   ) -->
-<!-- ``` -->
-
-<!-- ```{r} -->
-<!-- amtrak_lines <- purrr::pmap(amtrak_points_nested,  function(rail, city, pop2017, data){ -->
-<!--   data  %>% -->
-<!--     st_coordinates() %>% -->
-<!--     st_linestring() %>% -->
-<!--     st_sfc() %>% -->
-<!--     st_sf() %>% -->
-<!--     dplyr::mutate(rail = rail, city = city, pop2017 = pop2017) -->
-<!--   } -->
-<!--   ) %>% -->
-<!--   do.call(rbind, .) -->
-<!-- ``` -->
-
-<!-- ```{r} -->
-<!-- amtrak_lines['pop2017'] %>% plot() -->
-<!-- ``` -->
+```{r}
+tm_shape(northeast) +
+  tm_borders() +
+  tm_fill() +
+  tm_shape(amtrak_cbsa_lines) +
+  tm_lines(col = 'respop72017') 
+```
