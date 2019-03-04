@@ -636,6 +636,10 @@ census_data <- census_data %>%
 ```
 
 ```{r}
+
+amtrak_cbsa <- amtrak_cbsa %>%
+  dplyr::left_join(census_data)
+
 northeast_amtrak_cbsa <- northeast_amtrak_cbsa %>%
   dplyr::left_join(census_data)
 ```
@@ -690,16 +694,72 @@ plot(amtrak_cbsa_points['pop2017'], cex = .25, add = T)
 ```
 
 
-### TMAP
+### Leaflet
 
 ```{r}
-library(tmap)
+library(leaflet)
 ```
 
 ```{r}
-tm_shape(northeast) +
-  tm_borders() +
-  tm_fill() +
-  tm_shape(amtrak_cbsa_lines) +
-  tm_lines(col = 'respop72017') 
+center_conus <- st_centroid(conus_outline) %>%
+  st_coordinates()
+print('')
+center_conus
+```
+
+```{r}
+m <- leaflet() %>%
+  setView(lng = center_conus[1],
+          lat = center_conus[2],
+          zoom = 3) %>%
+  addTiles()  # Add default OpenStreetMap map tiles
+  
+m
+```
+
+```{r}
+m <- m %>%
+  addPolygons(data = conus_regions, 
+              color  = 'black', 
+              weight = 1, 
+              fillColor = 'white',
+              fillOpacity = .1)
+
+m
+```
+
+```{r}
+
+pal <- colorNumeric(
+  palette = c("#edf8b1", "#2c7fb8"),
+  domain = amtrak_cbsa$respop72017)
+
+m <- m %>%
+  addPolygons(data = amtrak_cbsa, 
+              fillColor = ~pal(respop72017),
+              fillOpacity = .8,
+              color = 'black', 
+              weight = 1
+              ) %>%
+  addLegend("bottomleft", 
+            data = amtrak_cbsa,
+            pal = pal, 
+            values = ~respop72017,
+            title = "Est. Population (2017)",
+            opacity = 1
+  )
+
+m
+```
+
+```{r}
+m %>%
+  addPolylines(data = amtrak,
+               color = 'red', 
+               weight = 3)
+```
+```
+
+```{r}
+library(osm)
 ```
