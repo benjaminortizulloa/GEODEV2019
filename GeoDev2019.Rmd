@@ -16,6 +16,7 @@ The material in this workshop is strongly influenced by the following free onlin
 - [https://geocompr.robinlovelace.net/](https://geocompr.robinlovelace.net/)
 - [https://r4ds.had.co.nz/](https://r4ds.had.co.nz/)
 - [https://jennybc.github.io/purrr-tutorial/](https://jennybc.github.io/purrr-tutorial/)
+- [https://rstudio.github.io/leaflet/](https://rstudio.github.io/leaflet/)
 
 ## Introduction to R
 
@@ -735,11 +736,12 @@ pal <- colorNumeric(
   domain = amtrak_cbsa$respop72017)
 
 m <- m %>%
-  addPolygons(data = amtrak_cbsa, 
+  addPolygons(data = amtrak_cbsa,  
               fillColor = ~pal(respop72017),
               fillOpacity = .8,
               color = 'black', 
-              weight = 1
+              weight = 1,
+              label = ~paste(NAME, "'s Expected Population for 2017 was", respop72017)
               ) %>%
   addLegend("bottomleft", 
             data = amtrak_cbsa,
@@ -752,6 +754,7 @@ m <- m %>%
 m
 ```
 
+
 ```{r}
 m %>%
   addPolylines(data = amtrak,
@@ -760,6 +763,3 @@ m %>%
 ```
 ```
 
-```{r}
-library(osm)
-```
